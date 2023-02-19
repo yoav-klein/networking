@@ -13,7 +13,6 @@
 
 #define MAX_EVENTS (10)
 #define BUFFSIZE (100)
-#define PORT (8080)
 #define LISTEN_BACKLOG (50)
 
 
@@ -68,7 +67,7 @@ int CreateSocket()
 	return sockfd;
 }
 
-void Bind(int sockfd, int is_specific_addr, char* addr)
+void Bind(int sockfd, int is_specific_addr, char* addr, int port)
 {
 	struct sockaddr_in servaddr;
 	
@@ -82,7 +81,7 @@ void Bind(int sockfd, int is_specific_addr, char* addr)
 	{
 		servaddr.sin_addr.s_addr = INADDR_ANY;
 	}
-	servaddr.sin_port = htons(PORT);
+	servaddr.sin_port = htons(port);
 	
 	if(-1 == bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)))
 	{
@@ -203,6 +202,11 @@ void ConfigureSighandler()
 	}
 }
 
+void Usage(const char *prog_name)
+{
+    printf("Usage:\n");
+    printf("%s [addr] <port>\n", prog_name);
+}
 
 int main(int argc, char** argv)
 {
@@ -210,14 +214,19 @@ int main(int argc, char** argv)
 	int sockfd = CreateSocket();
 	int epoll_fd = 0;
 	
-	if(argc > 1)
+	if(argc > 2)
 	{
-		Bind(sockfd, 1, argv[1]);
+		Bind(sockfd, 1, argv[1], atoi(argv[2]));
 	}
-	else
+	else if(argc > 1)
 	{
-		Bind(sockfd, 0, NULL);
-	}
+		Bind(sockfd, 0, NULL, atoi(argv[1]));
+    }
+    else
+    {
+        Usage(argv[0]);
+        return 1;
+    }
 	
 	ConfigureSighandler();
 	ReceiveConnection(sockfd);
